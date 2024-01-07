@@ -9,13 +9,15 @@ int main()
 {
     int lives = 6;
 
-    char secret_word[256] = "queijo\n";
+    char secret_word[256] = "amoras\n";
     char word_status[256] = "******\n";
     char winning_message[256] = "Congratulations, you won!\n";
     char losing_message[256] = "Oh no, you lost!\n";
     char invalid_input_message[256] = "Please, send only one charcter!\n";
     char letter_found_message[256] = "Letter found!\n";
     char lost_life_message[256] = "Oh no, you lost a life!\n";
+    char remaining_lives_message[256] = "";
+    char null_message[256] = "";
 
     char user_input[256];
 
@@ -44,6 +46,7 @@ int main()
         if(strlen(user_input) > 2)
         {
             send(client_socket, invalid_input_message, sizeof(invalid_input_message), 0);
+            send(client_socket, null_message, sizeof(null_message), 0);
             continue;
         }
 
@@ -58,9 +61,15 @@ int main()
                 }
             }
 
-            printf("word status is: %s\n", word_status);
-
             send(client_socket, word_status, sizeof(word_status), 0);
+
+            if(strcmp(word_status, secret_word) == 0)
+            {
+                send(client_socket, winning_message, sizeof(winning_message), 0);
+                break;
+            }
+
+            send(client_socket, null_message, sizeof(null_message), 0);
 
         }
         else
@@ -75,11 +84,15 @@ int main()
             }
 
             send(client_socket, word_status, sizeof(word_status), 0);
+            // formats string to be sent with the correct number of lives
+            sprintf(remaining_lives_message, "You have %i lives remaining.\n", lives);
+            send(client_socket, remaining_lives_message, sizeof(remaining_lives_message), 0);
+            send(client_socket, null_message, sizeof(null_message), 0);
         }
 
     }
 
-    printf("Closing the server\n");
+    printf("End of Game. Closing the server\n");
 
     // close the socket
     close(server_socket);
