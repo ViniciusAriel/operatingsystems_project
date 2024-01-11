@@ -4,13 +4,16 @@
 #include <sys/socket.h>     // socket functions
 #include <netinet/in.h>     // contains constants and structures needed for internet domain addresses
 #include <string.h>         // string functions
+#include <time.h>           // time functions for random int
+
+#define LINE_LEN 60
 
 int main()
 {
     int lives = 6;
 
-    char secret_word[256] = "amoras\n";
-    char word_status[256] = "******\n";
+    char secret_word[256];
+    char word_status[256] = "******";
     char winning_message[256] = "Congratulations, you won!\n";
     char losing_message[256] = "Oh no, you lost!\n";
     char invalid_input_message[256] = "Please, send only one charcter!\n";
@@ -20,6 +23,20 @@ int main()
     char null_message[256] = "";
 
     char user_input[256];
+
+    // picks random word from list
+    srand(time(NULL));
+    int random_number = rand() % 50;
+
+    FILE *word_list = fopen("word_list.txt", "r");
+
+    for(int i = 0; i <= 50; i++)
+    {
+        fgets(secret_word, LINE_LEN, word_list);
+
+        if(i == random_number)
+            break;
+    }
 
     // create server socket
     int server_socket;
@@ -63,7 +80,7 @@ int main()
 
             send(client_socket, word_status, sizeof(word_status), 0);
 
-            if(strcmp(word_status, secret_word) == 0)
+            if(strncmp(word_status, secret_word, 6) == 0)
             {
                 send(client_socket, winning_message, sizeof(winning_message), 0);
                 break;
@@ -96,6 +113,9 @@ int main()
 
     // close the socket
     close(server_socket);
+
+    // close word list
+    fclose(word_list);
 
     return 0;
 }
