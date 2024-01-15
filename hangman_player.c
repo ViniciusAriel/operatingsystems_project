@@ -29,6 +29,10 @@ int main()
     {
         printf("There was an error making a connection to the remote socket\n\n");
     }
+    else
+    {
+        printf("Connected to the server! Guess the secret word!\nPlease write a character and press enter to send it!\n\n");
+    }
 
     while(1)
     {
