@@ -4,9 +4,9 @@ This project implements a server and player code for a "Hangman's Game". It can 
 
 ## Game Description
 
-In Hangman's Game, there is a secret word that the players must guess. The only information available from the start is the number of letters in the word.
+In the Hangman's Game, there is a secret word that the players must guess. The only information available from the start is the number of letters in the word.
 
-Each player can guess a letter. If the letter is not contained in the secret word, a life is lost. If the letter is contained in the secret word, every position in which this letter appear in is revealed.
+Each player can guess a letter. If the letter is not contained in the secret word, a live is lost. If the letter is contained in the secret word, every position in which this letter appear in is revealed.
 
 The players win if they are able to guess all the letters of the secret word. Alternatively, they lose if they run out of lives. The lives are always shared between the players;
 
