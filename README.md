@@ -29,7 +29,7 @@ When the players either win or lose, the game is considered over and the server 
 First, initialize the server
 > ./hangman_server
 
-With the server is properly running in the port, initialize the players one at a time
+With the server properly running in the port, initialize the players one at a time
 > ./hangman_player
 
 Once both are running, it's possible to send each letter by the terminal to make a guess.
