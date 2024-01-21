@@ -5,25 +5,111 @@
 #include <netinet/in.h>     // contains constants and structures needed for internet domain addresses
 #include <string.h>         // string functions
 #include <time.h>           // time functions for random int
+#include <pthread.h>        // thread functions for handling multiple clients
 
 #define LINE_LEN 60
 
-int main()
-{
-    int lives = 6;
+int lives = 6;
 
-    char secret_word[256];
-    char word_status[256] = "******";
-    char winning_message[256] = "Congratulations, you won!\n";
-    char losing_message[256] = "Oh no, you lost!\n";
-    char invalid_input_message[256] = "Please, send only one charcter!\n";
-    char letter_found_message[256] = "Letter found!\n";
-    char lost_life_message[256] = "Oh no, you lost a life!\n";
-    char remaining_lives_message[256] = "";
-    char null_message[256] = "";
+char secret_word[256];
+char word_status[256] = "******";
+char winning_message[256] = "Congratulations, you won!\n";
+char losing_message[256] = "Oh no, you lost!\n";
+char invalid_input_message[256] = "Please, send only one charcter!\n";
+char letter_found_message[256] = "Letter found!\n";
+char lost_life_message[256] = "Oh no, you lost a life!\n";
+char remaining_lives_message[256] = "";
+char received_input_message[256] = "";
+
+int server_socket;
+
+int client_sockets[20];
+int number_of_clients = 0;
+
+void close_client_socket();
+void send_message_to_all_clients(char pmessage[256]);
+
+void * game_logic(void* pclient_socket)
+{
+    int client_socket = *((int*)pclient_socket);
+    free(pclient_socket);
 
     char user_input[256];
 
+    while(1)
+    {
+        recv(client_socket, &user_input, sizeof(user_input), 0);
+
+        if(strlen(user_input) > 2)
+        {
+            send(client_socket, invalid_input_message, sizeof(invalid_input_message), 0);
+            continue;
+        }
+
+        sprintf(received_input_message, "Received the letter: %s\n", user_input);
+        send_message_to_all_clients(received_input_message);
+
+        if(strchr(secret_word, user_input[0]) != NULL)
+        {
+
+            for(int i = 0; i <= strlen(secret_word); i++)
+            {
+                if(secret_word[i] == user_input[0])
+                {
+                    word_status[i] = user_input[0];
+                }
+            }
+
+            send_message_to_all_clients(word_status);
+
+            if(strncmp(word_status, secret_word, 6) == 0)
+            {
+                send_message_to_all_clients(winning_message);
+                close_client_socket();
+                break;
+
+            }
+        }
+        else
+        {
+            send_message_to_all_clients(lost_life_message);
+
+            lives--;
+            if(lives == 0)
+            {
+                send_message_to_all_clients(losing_message);
+                close_client_socket();
+                break;
+            }
+
+            send_message_to_all_clients(word_status);
+            sprintf(remaining_lives_message, "You have %i lives remaining.\n", lives);
+            send_message_to_all_clients(remaining_lives_message);
+        }
+
+    }
+
+    return NULL;
+}
+
+void close_client_socket()
+{
+    printf("End of Game. Closing the server\n");
+
+    // close the socket
+    close(server_socket);
+}
+
+void send_message_to_all_clients(char message[256])
+{
+    for(int i = 0; i < number_of_clients; i++)
+    {
+        send(client_sockets[i], message, sizeof(invalid_input_message), 0);
+    }
+}
+
+int main()
+{
     // picks random word from list
     srand(time(NULL));
     int random_number = rand() % 50;
@@ -39,7 +125,6 @@ int main()
     }
 
     // create server socket
-    int server_socket;
     server_socket = socket(AF_INET, SOCK_STREAM, 0);
 
     // define the server address
@@ -54,59 +139,25 @@ int main()
     listen(server_socket, 5);
 
     int client_socket;
-    client_socket = accept(server_socket, NULL, NULL);
-
-    while(1)
+    while (1)
     {
-        recv(client_socket, &user_input, sizeof(user_input), 0);
-
-        if(strlen(user_input) > 2)
+        client_socket = accept(server_socket, NULL, NULL);
+        if(client_socket == -1)
         {
-            send(client_socket, invalid_input_message, sizeof(invalid_input_message), 0);
-            send(client_socket, null_message, sizeof(null_message), 0);
-            continue;
+            printf("Error handling connection!\n");
+            break;
         }
 
-        if(strchr(secret_word, user_input[0]) != NULL)
-        {
+        printf("Connected!\n");
 
-            for(int i = 0; i <= strlen(secret_word); i++)
-            {
-                if(secret_word[i] == user_input[0])
-                {
-                    word_status[i] = user_input[0];
-                }
-            }
+        client_sockets[number_of_clients] = client_socket;
+        number_of_clients++;
 
-            send(client_socket, word_status, sizeof(word_status), 0);
+        pthread_t client_thread;
+        int* pclient = malloc(sizeof(int));
+        *pclient = client_socket;
 
-            if(strncmp(word_status, secret_word, 6) == 0)
-            {
-                send(client_socket, winning_message, sizeof(winning_message), 0);
-                break;
-            }
-
-            send(client_socket, null_message, sizeof(null_message), 0);
-
-        }
-        else
-        {
-            send(client_socket, lost_life_message, sizeof(lost_life_message), 0);
-
-            lives--;
-            if(lives == 0)
-            {
-                send(client_socket, losing_message, sizeof(losing_message), 0);
-                break;
-            }
-
-            send(client_socket, word_status, sizeof(word_status), 0);
-            // formats string to be sent with the correct number of lives
-            sprintf(remaining_lives_message, "You have %i lives remaining.\n", lives);
-            send(client_socket, remaining_lives_message, sizeof(remaining_lives_message), 0);
-            send(client_socket, null_message, sizeof(null_message), 0);
-        }
-
+        pthread_create(&client_thread, NULL, game_logic, pclient);
     }
 
     printf("End of Game. Closing the server\n");
