@@ -1,36 +1,51 @@
-#include <stdio.h>          // stardard I/O operations
-#include <stdlib.h>         // standard lib
-#include <string.h>         // string functions
-#include <sys/socket.h>     // socket functions
-#include <netinet/in.h>     // contains constants and structures needed for internet domain addresses
-#include <pthread.h>        // thread functions for handling concurrent input and message receibing
+#include <stdio.h>      // stardard I/O operations
+#include <stdlib.h>     // standard lib
+#include <string.h>     // string functions
+#include <sys/socket.h> // socket functions
+#include <netinet/in.h> // contains constants and structures needed for internet domain addresses
+#include <pthread.h>    // thread functions for handling concurrent input and message receibing
 
 #define SERVER_PORT 9002
 
 int client_socket;
 
-void *receive_messages(void *arg) {
+char winning_message[256] = "Congratulations, you won!\n";
+char losing_message[256] = "Oh no, game over!\n";
+
+void *receive_messages(void *arg)
+{
     char received_message[256];
-    while (1) {
+    while (1)
+    {
         recv(client_socket, received_message, sizeof(received_message), 0);
         printf("Server: %s\n", received_message);
+
+        if (strncmp(received_message, losing_message, 10) == 0)
+            exit(0);
+
+        if (strncmp(received_message, winning_message, 10) == 0)
+            exit(0);
     }
 }
 
-void *send_inputs(void *arg) {
+void *send_inputs(void *arg)
+{
     char user_input[256];
-    while (1) {
+    while (1)
+    {
         fgets(user_input, sizeof(user_input), stdin);
         send(client_socket, user_input, strlen(user_input), 0);
     }
 }
 
-int main() {
+int main()
+{
     struct sockaddr_in server_address;
-    
+
     // Create socket
     client_socket = socket(AF_INET, SOCK_STREAM, 0);
-    if (client_socket == -1) {
+    if (client_socket == -1)
+    {
         perror("Socket creation failed");
         exit(EXIT_FAILURE);
     }
@@ -41,17 +56,21 @@ int main() {
     server_address.sin_addr.s_addr = INADDR_ANY;
 
     // Connect to the server
-    if (connect(client_socket, (struct sockaddr*)&server_address, sizeof(server_address)) == -1) {
+    if (connect(client_socket, (struct sockaddr *)&server_address, sizeof(server_address)) == -1)
+    {
         perror("Connection to server failed");
         exit(EXIT_FAILURE);
-    } else {
+    }
+    else
+    {
         printf("Connected to the server! Guess the secret word!\nPlease write a character and press enter to send it!\n\n");
     }
 
     // Create threads for receiving and sending messages
     pthread_t receive_thread, send_thread;
     if (pthread_create(&receive_thread, NULL, receive_messages, NULL) != 0 ||
-        pthread_create(&send_thread, NULL, send_inputs, NULL) != 0) {
+        pthread_create(&send_thread, NULL, send_inputs, NULL) != 0)
+    {
         perror("Thread creation failed");
         exit(EXIT_FAILURE);
     }
