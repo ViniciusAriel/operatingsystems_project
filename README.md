@@ -1,4 +1,4 @@
-# Terminal Executor - Operating Systems and Exercises - Final Project
+# Terminal Executioner - Operating Systems and Exercises - Final Project
 
 This project implements a server and player code for a "Hangman's Game". It can be played by multiple people together.
 
