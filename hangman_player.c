@@ -44,6 +44,8 @@ int main() {
     if (connect(client_socket, (struct sockaddr*)&server_address, sizeof(server_address)) == -1) {
         perror("Connection to server failed");
         exit(EXIT_FAILURE);
+    } else {
+        printf("Connected to the server! Guess the secret word!\nPlease write a character and press enter to send it!\n\n");
     }
 
     // Create threads for receiving and sending messages
